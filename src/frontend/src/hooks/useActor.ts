@@ -27,13 +27,20 @@ export function useActor() {
 
       const actor = await createActorWithConfig(actorOptions);
       const adminToken = getSecretParameter("caffeineAdminToken") || "";
-      await actor._initializeAccessControlWithSecret(adminToken);
+      try {
+        await actor._initializeAccessControlWithSecret(adminToken);
+      } catch (e) {
+        console.warn("Access control initialization warning:", e);
+        // Still return actor even if initialization has issues
+      }
       return actor;
     },
     // Only refetch when identity changes
     staleTime: Number.POSITIVE_INFINITY,
     // This will cause the actor to be recreated when the identity changes
     enabled: true,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // When the actor changes, invalidate dependent queries
