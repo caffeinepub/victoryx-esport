@@ -93,6 +93,30 @@ function loadSlots(matchId: bigint): Record<string, string> {
   }
 }
 
+interface MatchResultPlayer {
+  name: string;
+  points: number;
+  isWinner: boolean;
+}
+
+function loadMatchResults(matchId: bigint): MatchResultPlayer[] {
+  try {
+    const stored = localStorage.getItem(
+      `vx_match_results_${matchId.toString()}`,
+    );
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMatchResults(matchId: bigint, players: MatchResultPlayer[]) {
+  localStorage.setItem(
+    `vx_match_results_${matchId.toString()}`,
+    JSON.stringify(players),
+  );
+}
+
 function getStaffList(): StaffMember[] {
   try {
     const stored = localStorage.getItem(STAFF_LIST_KEY);
@@ -254,6 +278,11 @@ export default function AdminPage() {
   const [winningUserPrincipal, setWinningUserPrincipal] = useState("");
   const [winningAmount, setWinningAmount] = useState("");
 
+  const [resultDialogMatch, setResultDialogMatch] =
+    useState<TournamentMatch | null>(null);
+  const [resultPlayers, setResultPlayers] = useState<MatchResultPlayer[]>([]);
+  const [changingStatusId, setChangingStatusId] = useState<bigint | null>(null);
+
   const toggleSlots = (matchId: bigint) => {
     const key = matchId.toString();
     setExpandedSlots((prev) => {
@@ -347,6 +376,60 @@ export default function AdminPage() {
       });
     } catch {
       toast.error("Failed to add match");
+    }
+  };
+
+  const handleStatusChange = async (
+    match: TournamentMatch,
+    newStatus: Variant_upcoming_live_completed,
+  ) => {
+    if (newStatus === Variant_upcoming_live_completed.completed) {
+      const slots = loadSlots(match.id);
+      const existingResults = loadMatchResults(match.id);
+      const players: MatchResultPlayer[] = Object.values(slots)
+        .filter(Boolean)
+        .map((name) => {
+          const existing = existingResults.find((p) => p.name === name);
+          return {
+            name: name as string,
+            points: existing?.points || 0,
+            isWinner: existing?.isWinner || false,
+          };
+        });
+      setResultDialogMatch(match);
+      setResultPlayers(
+        players.length > 0
+          ? players
+          : [{ name: "", points: 0, isWinner: false }],
+      );
+      return;
+    }
+    setChangingStatusId(match.id);
+    try {
+      await updateMatch.mutateAsync({ ...match, status: newStatus });
+      toast.success("Match status updated");
+    } catch {
+      toast.error("Failed to update match status");
+    } finally {
+      setChangingStatusId(null);
+    }
+  };
+
+  const handleSaveResult = async () => {
+    if (!resultDialogMatch) return;
+    saveMatchResults(resultDialogMatch.id, resultPlayers);
+    setChangingStatusId(resultDialogMatch.id);
+    try {
+      await updateMatch.mutateAsync({
+        ...resultDialogMatch,
+        status: Variant_upcoming_live_completed.completed,
+      });
+      toast.success("Match completed and results saved!");
+      setResultDialogMatch(null);
+    } catch {
+      toast.error("Failed to update match status");
+    } finally {
+      setChangingStatusId(null);
     }
   };
 
@@ -1185,6 +1268,50 @@ export default function AdminPage() {
                             <ChevronDown size={11} />
                           )}
                         </Button>
+                        {match.status ===
+                          Variant_upcoming_live_completed.upcoming && (
+                          <Button
+                            data-ocid={`admin.match.golive_button.${i + 1}`}
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleStatusChange(
+                                match,
+                                Variant_upcoming_live_completed.live,
+                              )
+                            }
+                            disabled={changingStatusId === match.id}
+                            className="border-green-500/50 text-green-400 hover:bg-green-500/10 font-gaming text-[10px] px-2"
+                          >
+                            {changingStatusId === match.id ? (
+                              <Loader2 className="animate-spin" size={10} />
+                            ) : (
+                              "GO LIVE"
+                            )}
+                          </Button>
+                        )}
+                        {match.status ===
+                          Variant_upcoming_live_completed.live && (
+                          <Button
+                            data-ocid={`admin.match.endmatch_button.${i + 1}`}
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleStatusChange(
+                                match,
+                                Variant_upcoming_live_completed.completed,
+                              )
+                            }
+                            disabled={changingStatusId === match.id}
+                            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 font-gaming text-[10px] px-2"
+                          >
+                            {changingStatusId === match.id ? (
+                              <Loader2 className="animate-spin" size={10} />
+                            ) : (
+                              "END"
+                            )}
+                          </Button>
+                        )}
                         <Button
                           data-ocid={`admin.match.edit_button.${i + 1}`}
                           size="sm"
@@ -1536,6 +1663,123 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* RESULT DIALOG */}
+      <Dialog
+        open={!!resultDialogMatch}
+        onOpenChange={(open) => !open && setResultDialogMatch(null)}
+      >
+        <DialogContent
+          data-ocid="admin.result.dialog"
+          className="bg-background border-border max-w-md max-h-[80vh] overflow-y-auto"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-gaming text-primary">
+              SET RESULTS
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <p className="text-xs text-muted-foreground">
+              Enter points and mark winner for each player
+            </p>
+            {resultPlayers.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No registered players found
+              </p>
+            )}
+            {resultPlayers.map((player, idx) => (
+              <div
+                key={`rp-${idx}-${player.name}`}
+                data-ocid={`admin.result.player.item.${idx + 1}`}
+                className="flex items-center gap-2 bg-muted/40 rounded-lg p-2"
+              >
+                <div className="flex-1">
+                  {player.name ? (
+                    <p className="font-gaming text-sm">{player.name}</p>
+                  ) : (
+                    <Input
+                      placeholder="Player name"
+                      value={player.name}
+                      onChange={(e) => {
+                        const updated = [...resultPlayers];
+                        updated[idx] = {
+                          ...updated[idx],
+                          name: e.target.value,
+                        };
+                        setResultPlayers(updated);
+                      }}
+                      className="h-7 text-xs bg-muted border-border"
+                    />
+                  )}
+                </div>
+                <Input
+                  type="number"
+                  placeholder="Points"
+                  value={player.points || ""}
+                  onChange={(e) => {
+                    const updated = [...resultPlayers];
+                    updated[idx] = {
+                      ...updated[idx],
+                      points: Number(e.target.value),
+                    };
+                    setResultPlayers(updated);
+                  }}
+                  className="w-20 h-7 text-xs bg-muted border-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = resultPlayers.map((p, i) => ({
+                      ...p,
+                      isWinner: i === idx,
+                    }));
+                    setResultPlayers(updated);
+                  }}
+                  className={`font-gaming text-[10px] px-2 py-1 rounded border transition-colors ${player.isWinner ? "border-yellow-400 text-yellow-400 bg-yellow-400/10" : "border-border text-muted-foreground hover:border-yellow-400/50"}`}
+                >
+                  {player.isWinner ? "★ WIN" : "WIN?"}
+                </button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setResultPlayers([
+                  ...resultPlayers,
+                  { name: "", points: 0, isWinner: false },
+                ])
+              }
+              className="w-full border-dashed border-border text-muted-foreground font-gaming text-xs"
+            >
+              + Add Player
+            </Button>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setResultDialogMatch(null)}
+                className="flex-1 font-gaming text-xs border-border"
+                data-ocid="admin.result.cancel_button"
+              >
+                CANCEL
+              </Button>
+              <Button
+                onClick={handleSaveResult}
+                disabled={changingStatusId !== null}
+                className="flex-1 font-gaming text-xs bg-primary text-primary-foreground"
+                data-ocid="admin.result.confirm_button"
+              >
+                {changingStatusId !== null ? (
+                  <Loader2 className="animate-spin" size={14} />
+                ) : (
+                  "SAVE & END MATCH"
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

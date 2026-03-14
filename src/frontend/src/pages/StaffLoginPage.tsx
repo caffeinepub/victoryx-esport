@@ -56,14 +56,12 @@ export default function StaffLoginPage() {
   const navigate = useNavigate();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
-  const loginMode: StaffMode = MODE_URL_MAP[currentPath] ?? "all";
+  const urlMode: StaffMode = MODE_URL_MAP[currentPath] ?? "all";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const modeLabel = MODE_LABELS[loginMode];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,20 +69,25 @@ export default function StaffLoginPage() {
     setLoading(true);
     setTimeout(() => {
       const staffList = getStaffList();
-      // Staff can login if their mode matches OR their mode is 'all'
+      // Find staff matching username+password.
+      // Mode restriction: staff can login if their assigned mode matches the URL mode,
+      // OR if either side is "all" (any URL works for "all" mode staff, and /vx-staff works for any staff).
       const staff = staffList.find(
         (s) =>
           s.username === username &&
           s.password === password &&
-          (s.mode === loginMode || s.mode === "all" || loginMode === "all"),
+          (urlMode === "all" || // /vx-staff accepts anyone
+            s.mode === "all" || // "all" mode staff can login anywhere
+            s.mode === urlMode), // exact mode match
       );
       if (staff) {
+        // Save session with the staff's actual assigned mode
         localStorage.setItem(
           STAFF_SESSION_KEY,
           JSON.stringify({
             username: staff.username,
             name: staff.name,
-            mode: loginMode,
+            mode: staff.mode, // use staff's own mode, not URL mode
           }),
         );
         navigate({ to: "/staff-panel" });
@@ -94,6 +97,8 @@ export default function StaffLoginPage() {
       }
     }, 600);
   };
+
+  const urlModeLabel = MODE_LABELS[urlMode];
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
@@ -130,7 +135,7 @@ export default function StaffLoginPage() {
             STAFF ACCESS
           </h1>
           <p className="text-xs text-muted-foreground mt-1 tracking-wider">
-            {modeLabel.toUpperCase()} — AUTHORIZED ONLY
+            {urlModeLabel.toUpperCase()} — AUTHORIZED ONLY
           </p>
         </div>
 
@@ -166,7 +171,7 @@ export default function StaffLoginPage() {
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
-                  data-ocid="staff_login.input"
+                  data-ocid="staff_login.password_input"
                   type="password"
                   value={password}
                   onChange={(e) => {

@@ -9,6 +9,23 @@ import {
 } from "../hooks/useQueries";
 import { useTranslation } from "../hooks/useTranslation";
 
+interface MatchResultPlayer {
+  name: string;
+  points: number;
+  isWinner: boolean;
+}
+
+function loadMatchResults(matchId: bigint): MatchResultPlayer[] {
+  try {
+    const stored = localStorage.getItem(
+      `vx_match_results_${matchId.toString()}`,
+    );
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
 function EmptyState({
   message,
   subMessage,
@@ -34,6 +51,7 @@ function MatchCard({
   prizeLabel,
   roomIdLabel,
   passwordLabel,
+  results,
 }: {
   match: TournamentMatch;
   index: number;
@@ -41,6 +59,7 @@ function MatchCard({
   prizeLabel: string;
   roomIdLabel: string;
   passwordLabel: string;
+  results?: MatchResultPlayer[];
 }) {
   return (
     <motion.div
@@ -98,6 +117,31 @@ function MatchCard({
           </span>
         </div>
       )}
+      {results && results.length > 0 && (
+        <div className="border-t border-border/40 pt-3 space-y-1.5">
+          <p className="text-[10px] font-gaming text-muted-foreground tracking-widest">
+            RESULTS
+          </p>
+          {results.map((player, idx) => (
+            <div
+              key={`res-${idx}-${player.name}`}
+              className="flex items-center justify-between bg-muted/30 rounded-lg px-2 py-1.5"
+            >
+              <div className="flex items-center gap-2">
+                {player.isWinner && (
+                  <span className="text-yellow-400 text-xs">★</span>
+                )}
+                <span className="font-gaming text-sm">
+                  {player.name || `Player ${idx + 1}`}
+                </span>
+              </div>
+              <span className="font-mono text-sm text-primary">
+                {player.points} pts
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -146,7 +190,7 @@ export default function MyMatchesPage() {
               className="flex-1 font-gaming tracking-wide data-[state=active]:bg-green-600 data-[state=active]:text-white"
             >
               <Zap size={14} className="mr-1" />
-              {t("live")}
+              "ON GOING"
             </TabsTrigger>
             <TabsTrigger
               value="completed"
@@ -154,7 +198,7 @@ export default function MyMatchesPage() {
               className="flex-1 font-gaming tracking-wide data-[state=active]:bg-secondary data-[state=active]:text-foreground"
             >
               <CheckCircle2 size={14} className="mr-1" />
-              {t("done")}
+              "RESULT"
             </TabsTrigger>
           </TabsList>
 
@@ -207,14 +251,18 @@ export default function MyMatchesPage() {
                     subMessage={t("register_to_see_matches")}
                   />
                 ) : (
-                  completed.map((m, i) => (
-                    <MatchCard
-                      key={m.id.toString()}
-                      match={m}
-                      index={i}
-                      {...matchCardProps}
-                    />
-                  ))
+                  completed.map((m, i) => {
+                    const results = loadMatchResults(m.id);
+                    return (
+                      <MatchCard
+                        key={m.id.toString()}
+                        match={m}
+                        index={i}
+                        {...matchCardProps}
+                        results={results}
+                      />
+                    );
+                  })
                 )}
               </TabsContent>
             </>
