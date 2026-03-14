@@ -1,0 +1,168 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,400;12..96,600;12..96,800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 12% 0.018 255;
+    --foreground: 95% 0.008 255;
+    --card: 15% 0.022 255;
+    --card-foreground: 95% 0.008 255;
+    --popover: 14% 0.02 255;
+    --popover-foreground: 95% 0.008 255;
+    --primary: 70% 0.19 48;
+    --primary-foreground: 10% 0.01 48;
+    --secondary: 22% 0.03 255;
+    --secondary-foreground: 85% 0.01 255;
+    --muted: 18% 0.02 255;
+    --muted-foreground: 60% 0.02 255;
+    --accent: 62% 0.22 220;
+    --accent-foreground: 98% 0.005 255;
+    --destructive: 55% 0.22 25;
+    --destructive-foreground: 98% 0.005 255;
+    --border: 22% 0.025 255;
+    --input: 20% 0.025 255;
+    --ring: 70% 0.19 48;
+    --radius: 0.5rem;
+    --chart-1: 70% 0.19 48;
+    --chart-2: 62% 0.22 220;
+    --chart-3: 65% 0.2 160;
+    --chart-4: 65% 0.2 300;
+    --chart-5: 65% 0.2 10;
+    --sidebar: 10% 0.015 255;
+    --sidebar-foreground: 95% 0.008 255;
+    --sidebar-primary: 70% 0.19 48;
+    --sidebar-primary-foreground: 10% 0.01 48;
+    --sidebar-accent: 18% 0.02 255;
+    --sidebar-accent-foreground: 85% 0.01 255;
+    --sidebar-border: 22% 0.025 255;
+    --sidebar-ring: 70% 0.19 48;
+    /* Gaming extras */
+    --glow-orange: oklch(70% 0.19 48 / 0.4);
+    --glow-blue: oklch(62% 0.22 220 / 0.4);
+    --gradient-card: linear-gradient(
+      135deg,
+      oklch(18% 0.025 255),
+      oklch(12% 0.015 255)
+    );
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  code,
+  pre,
+  .mono {
+    font-family: "JetBrains Mono", monospace;
+  }
+}
+
+@layer components {
+  .glow-orange {
+    box-shadow: 0 0 20px var(--glow-orange), 0 0 40px oklch(70% 0.19 48 / 0.15);
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 20px var(--glow-blue), 0 0 40px oklch(62% 0.22 220 / 0.15);
+  }
+
+  .glow-text-orange {
+    text-shadow: 0 0 20px oklch(70% 0.19 48 / 0.7);
+  }
+
+  .gaming-card {
+    background: var(--gradient-card);
+    border: 1px solid oklch(25% 0.03 255);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gaming-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(70% 0.19 48),
+      transparent
+    );
+  }
+
+  .hex-clip {
+    clip-path: polygon(
+      8% 0%,
+      92% 0%,
+      100% 8%,
+      100% 92%,
+      92% 100%,
+      8% 100%,
+      0% 92%,
+      0% 8%
+    );
+  }
+
+  .scan-line {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      oklch(100% 0 0 / 0.015) 2px,
+      oklch(100% 0 0 / 0.015) 4px
+    );
+    pointer-events: none;
+  }
+
+  .bottom-nav-safe {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@layer utilities {
+  .font-gaming {
+    font-family: "Bricolage Grotesque", sans-serif;
+  }
+
+  .font-body {
+    font-family: "Rajdhani", sans-serif;
+  }
+
+  .font-mono {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  .text-gradient-orange {
+    background: linear-gradient(135deg, oklch(75% 0.18 50), oklch(65% 0.2 30));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+}
