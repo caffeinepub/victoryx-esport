@@ -11,6 +11,7 @@ import BottomNav from "./components/BottomNav";
 import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useUserProfile } from "./hooks/useQueries";
+import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPage from "./pages/AdminPage";
 import AuthPage from "./pages/AuthPage";
 import CategoryPage from "./pages/CategoryPage";
@@ -116,6 +117,12 @@ const adminRoute = createRoute({
   component: AdminPage,
 });
 
+const adminLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/vx-secure-admin",
+  component: AdminLoginPage,
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   tournamentsRoute,
@@ -124,6 +131,7 @@ const routeTree = rootRoute.addChildren([
   walletRoute,
   profileRoute,
   adminRoute,
+  adminLoginRoute,
 ]);
 
 const router = createRouter({ routeTree });

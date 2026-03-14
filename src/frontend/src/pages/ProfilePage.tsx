@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronRight,
   Edit3,
@@ -37,6 +38,7 @@ export default function ProfilePage() {
   const { data: profile } = useUserProfile();
   const saveProfile = useSaveProfile();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [editing, setEditing] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -93,6 +95,9 @@ export default function ProfilePage() {
     ? `${profile.firstName[0] || "?"}${profile.lastName[0] || ""}`.toUpperCase()
     : "?";
   const principal = identity?.getPrincipal().toString();
+
+  // Suppress unused variable warning — navigate kept for potential future use
+  void navigate;
 
   return (
     <div className="min-h-screen bg-background">

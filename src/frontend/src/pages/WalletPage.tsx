@@ -271,6 +271,14 @@ export default function WalletPage() {
                     className="w-56 h-56 object-contain"
                   />
                 </div>
+                <div className="mt-3 bg-muted rounded-lg px-4 py-2 text-center">
+                  <p className="text-xs text-muted-foreground font-gaming tracking-widest">
+                    UPI ID
+                  </p>
+                  <p className="font-mono text-sm font-bold text-primary mt-1">
+                    anubhov@ptyes
+                  </p>
+                </div>
               </div>
               <Button
                 data-ocid="wallet.paid_button"

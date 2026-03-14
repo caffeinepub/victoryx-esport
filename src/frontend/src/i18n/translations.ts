@@ -91,6 +91,7 @@ export type TranslationKeys =
   | "first_name_required"
   | "admin_token_optional"
   | "admin_only"
+  | "admin_panel"
   // General
   | "loading"
   | "male"
@@ -186,6 +187,7 @@ const translations: Translations = {
     first_name_required: "First Name",
     admin_token_optional: "Admin Token (optional)",
     admin_only: "Admin only",
+    admin_panel: "Admin Panel",
     loading: "Loading...",
     male: "Male",
     female: "Female",
@@ -277,6 +279,7 @@ const translations: Translations = {
     first_name_required: "প্রথম নাম",
     admin_token_optional: "অ্যাডমিন টোকেন (ঐচ্ছিক)",
     admin_only: "শুধু অ্যাডমিন",
+    admin_panel: "অ্যাডমিন প্যানেল",
     loading: "লোড হচ্ছে...",
     male: "পুরুষ",
     female: "মহিলা",
@@ -368,6 +371,7 @@ const translations: Translations = {
     first_name_required: "पहला नाम",
     admin_token_optional: "एडमिन टोकन (वैकल्पिक)",
     admin_only: "केवल एडमिन",
+    admin_panel: "एडमिन पैनल",
     loading: "लोड हो रहा है...",
     male: "पुरुष",
     female: "महिला",
@@ -459,6 +463,7 @@ const translations: Translations = {
     first_name_required: "名前",
     admin_token_optional: "管理者トークン（任意）",
     admin_only: "管理者のみ",
+    admin_panel: "管理パネル",
     loading: "読み込み中...",
     male: "男性",
     female: "女性",
@@ -550,6 +555,7 @@ const translations: Translations = {
     first_name_required: "الاسم الأول",
     admin_token_optional: "رمز المسؤول (اختياري)",
     admin_only: "للمسؤولين فقط",
+    admin_panel: "لوحة المسؤول",
     loading: "جارٍ التحميل...",
     male: "ذكر",
     female: "أنثى",
@@ -641,6 +647,7 @@ const translations: Translations = {
     first_name_required: "Nombre",
     admin_token_optional: "Token de administrador (opcional)",
     admin_only: "Solo administradores",
+    admin_panel: "Panel de administrador",
     loading: "Cargando...",
     male: "Masculino",
     female: "Femenino",
@@ -733,6 +740,7 @@ const translations: Translations = {
     first_name_required: "Prénom",
     admin_token_optional: "Jeton administrateur (optionnel)",
     admin_only: "Administrateurs seulement",
+    admin_panel: "Panneau d'administration",
     loading: "Chargement...",
     male: "Homme",
     female: "Femme",
@@ -825,6 +833,7 @@ const translations: Translations = {
     first_name_required: "Nome",
     admin_token_optional: "Token de administrador (opcional)",
     admin_only: "Apenas administradores",
+    admin_panel: "Painel de administração",
     loading: "Carregando...",
     male: "Masculino",
     female: "Feminino",
