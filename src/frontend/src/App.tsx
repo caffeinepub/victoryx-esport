@@ -5,9 +5,10 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
 } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import BottomNav from "./components/BottomNav";
+import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useUserProfile } from "./hooks/useQueries";
 import AdminPage from "./pages/AdminPage";
@@ -21,9 +22,23 @@ import WalletPage from "./pages/WalletPage";
 
 function AppShell() {
   const { identity, isInitializing } = useInternetIdentity();
-  const { data: profile, isLoading } = useUserProfile();
+  const { isFetching: isActorFetching } = useActor();
+  const { data: profile, isFetching: isProfileFetching } = useUserProfile();
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  if (isInitializing || isLoading) {
+  // Safety timeout — if loading takes more than 5s, force show the app
+  useEffect(() => {
+    const timer = setTimeout(() => setLoadingTimeout(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading =
+    !loadingTimeout &&
+    (isInitializing ||
+      isActorFetching ||
+      (!!identity && isProfileFetching && !profile));
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">

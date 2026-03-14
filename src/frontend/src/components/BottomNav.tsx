@@ -1,27 +1,39 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Crosshair, Home, Trophy, User, Wallet } from "lucide-react";
-
-const navItems = [
-  { to: "/", label: "Home", icon: Home, ocid: "nav.home_link" },
-  {
-    to: "/tournaments",
-    label: "Arena",
-    icon: Trophy,
-    ocid: "nav.tournaments_link",
-  },
-  {
-    to: "/my-matches",
-    label: "Matches",
-    icon: Crosshair,
-    ocid: "nav.mymatches_link",
-  },
-  { to: "/wallet", label: "Wallet", icon: Wallet, ocid: "nav.wallet_link" },
-  { to: "/profile", label: "Profile", icon: User, ocid: "nav.profile_link" },
-];
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function BottomNav() {
   const location = useLocation();
+  const { t } = useTranslation();
+
+  const navItems = [
+    { to: "/", label: t("nav_home"), icon: Home, ocid: "nav.home_link" },
+    {
+      to: "/tournaments",
+      label: t("nav_arena"),
+      icon: Trophy,
+      ocid: "nav.tournaments_link",
+    },
+    {
+      to: "/my-matches",
+      label: t("nav_matches"),
+      icon: Crosshair,
+      ocid: "nav.mymatches_link",
+    },
+    {
+      to: "/wallet",
+      label: t("nav_wallet"),
+      icon: Wallet,
+      ocid: "nav.wallet_link",
+    },
+    {
+      to: "/profile",
+      label: t("nav_profile"),
+      icon: User,
+      ocid: "nav.profile_link",
+    },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[oklch(9%_0.018_255)] border-t border-border">

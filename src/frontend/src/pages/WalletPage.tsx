@@ -28,6 +28,7 @@ import {
   useTransactionHistory,
   useWalletBalance,
 } from "../hooks/useQueries";
+import { useTranslation } from "../hooks/useTranslation";
 
 function TxRow({ tx, index }: { tx: WalletTransaction; index: number }) {
   const isDeposit = tx.transactionType === "deposit";
@@ -103,6 +104,7 @@ export default function WalletPage() {
   const { data: balance, isLoading: balLoading } = useWalletBalance();
   const { data: txHistory, isLoading: txLoading } = useTransactionHistory();
   const requestPayment = useRequestPayment();
+  const { t } = useTranslation();
 
   const [addMoneyOpen, setAddMoneyOpen] = useState(false);
   const [amount, setAmount] = useState("");
@@ -141,9 +143,11 @@ export default function WalletPage() {
       <header className="px-4 pt-8 pb-4">
         <div className="h-1 w-12 bg-primary rounded-full mb-3" />
         <h1 className="font-gaming text-3xl font-extrabold tracking-tight">
-          WALLET
+          {t("wallet")}
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">Manage your funds</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          {t("manage_funds")}
+        </p>
       </header>
 
       <div className="px-4 space-y-5">
@@ -156,7 +160,7 @@ export default function WalletPage() {
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <p className="text-muted-foreground text-sm font-gaming tracking-widest">
-            BALANCE
+            {t("balance_label")}
           </p>
           {balLoading ? (
             <Skeleton className="h-12 w-40 mt-2 bg-muted" />
@@ -174,14 +178,14 @@ export default function WalletPage() {
             className="mt-4 bg-primary text-primary-foreground font-gaming tracking-widest glow-orange hover:bg-primary/90"
           >
             <Plus size={16} className="mr-2" />
-            ADD MONEY
+            {t("add_money")}
           </Button>
         </motion.div>
 
         {/* Transaction History */}
         <section>
           <h2 className="font-gaming text-base tracking-widest text-muted-foreground uppercase mb-3">
-            Transaction History
+            {t("transaction_history")}
           </h2>
           <div
             data-ocid="wallet.transaction_list"
@@ -200,10 +204,10 @@ export default function WalletPage() {
                   className="text-muted-foreground/30 mx-auto mb-3"
                 />
                 <p className="font-gaming text-muted-foreground text-sm">
-                  No transactions yet
+                  {t("no_transactions")}
                 </p>
                 <p className="text-xs text-muted-foreground/60 mt-1">
-                  Add money to get started
+                  {t("add_money_to_start")}
                 </p>
               </div>
             ) : (
@@ -221,7 +225,7 @@ export default function WalletPage() {
           <DialogHeader>
             <DialogTitle className="font-gaming text-xl flex items-center gap-2">
               <Wallet size={20} className="text-primary" />
-              Add Money
+              {t("add_money")}
             </DialogTitle>
           </DialogHeader>
 
@@ -229,14 +233,14 @@ export default function WalletPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="font-gaming text-sm tracking-wide text-muted-foreground">
-                  AMOUNT (৳)
+                  {t("amount")}
                 </Label>
                 <Input
                   data-ocid="wallet.addmoney_input"
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Enter amount"
+                  placeholder={t("enter_amount")}
                   className="bg-muted border-border font-mono text-lg h-12"
                   min="1"
                 />
@@ -247,18 +251,18 @@ export default function WalletPage() {
                 className="w-full bg-primary text-primary-foreground font-gaming tracking-widest h-12 glow-orange hover:bg-primary/90"
               >
                 <QrCode size={16} className="mr-2" />
-                SHOW QR CODE
+                {t("show_qr_code")}
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-3">
-                  Scan QR code and complete payment of{" "}
+                  {t("scan_qr_instructions")}{" "}
                   <span className="text-primary font-mono font-bold">
                     ৳{amount}
                   </span>
-                  , then click "I've Paid"
+                  , then click &quot;{t("ive_paid")}&quot;
                 </p>
                 <div className="inline-block p-3 bg-white rounded-2xl">
                   <img
@@ -277,14 +281,14 @@ export default function WalletPage() {
                 {requestPayment.isPending ? (
                   <Loader2 className="animate-spin mr-2" size={16} />
                 ) : null}
-                I'VE PAID
+                {t("ive_paid")}
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => setShowQR(false)}
                 className="w-full text-muted-foreground"
               >
-                Back
+                {t("back")}
               </Button>
             </div>
           )}

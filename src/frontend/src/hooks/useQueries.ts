@@ -154,6 +154,21 @@ export function useAddMatch() {
   });
 }
 
+export function useUpdateMatch() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (match: TournamentMatch) => {
+      if (!actor) throw new Error("No actor");
+      await actor.addMatch(match);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allMatches"] });
+      qc.invalidateQueries({ queryKey: ["matchesByCategory"] });
+    },
+  });
+}
+
 export function useApprovePayment() {
   const { actor } = useActor();
   const qc = useQueryClient();

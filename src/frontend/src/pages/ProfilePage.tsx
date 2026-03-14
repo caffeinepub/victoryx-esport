@@ -30,11 +30,13 @@ import {
   useSaveProfile,
   useUserProfile,
 } from "../hooks/useQueries";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function ProfilePage() {
   const { clear, identity } = useInternetIdentity();
   const { data: profile } = useUserProfile();
   const saveProfile = useSaveProfile();
+  const { t } = useTranslation();
 
   const [editing, setEditing] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -46,6 +48,10 @@ export default function ProfilePage() {
     phone: "",
     gender: "male",
   });
+
+  useEffect(() => {
+    setEditing(false);
+  }, []);
 
   useEffect(() => {
     if (profile) {
@@ -93,7 +99,7 @@ export default function ProfilePage() {
       <header className="px-4 pt-8 pb-4">
         <div className="h-1 w-12 bg-primary rounded-full mb-3" />
         <h1 className="font-gaming text-3xl font-extrabold tracking-tight">
-          PROFILE
+          {t("profile")}
         </h1>
       </header>
 
@@ -133,7 +139,7 @@ export default function ProfilePage() {
         >
           <div className="flex items-center justify-between">
             <h2 className="font-gaming text-sm tracking-widest text-muted-foreground">
-              PERSONAL INFO
+              {t("personal_info")}
             </h2>
             {!editing ? (
               <Button
@@ -144,7 +150,7 @@ export default function ProfilePage() {
                 className="text-primary h-7 text-xs font-gaming tracking-wide"
               >
                 <Edit3 size={12} className="mr-1" />
-                EDIT
+                {t("edit")}
               </Button>
             ) : (
               <div className="flex gap-2">
@@ -156,7 +162,7 @@ export default function ProfilePage() {
                   className="bg-primary text-primary-foreground h-7 text-xs font-gaming"
                 >
                   <Save size={12} className="mr-1" />
-                  SAVE
+                  {t("save")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -175,7 +181,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground font-gaming tracking-wide">
-                    FIRST NAME
+                    {t("first_name")}
                   </Label>
                   <Input
                     value={form.firstName}
@@ -187,7 +193,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground font-gaming tracking-wide">
-                    LAST NAME
+                    {t("last_name")}
                   </Label>
                   <Input
                     value={form.lastName}
@@ -200,7 +206,7 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground font-gaming tracking-wide">
-                  USERNAME
+                  {t("username")}
                 </Label>
                 <Input
                   value={form.username}
@@ -212,7 +218,7 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground font-gaming tracking-wide">
-                  PHONE
+                  {t("phone")}
                 </Label>
                 <Input
                   value={form.phone}
@@ -225,7 +231,7 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground font-gaming tracking-wide">
-                  GENDER
+                  {t("gender")}
                 </Label>
                 <Select
                   value={form.gender}
@@ -235,11 +241,11 @@ export default function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="male">{t("male")}</SelectItem>
+                    <SelectItem value="female">{t("female")}</SelectItem>
+                    <SelectItem value="other">{t("other")}</SelectItem>
                     <SelectItem value="preferNotToSay">
-                      Prefer not to say
+                      {t("prefer_not_to_say")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -248,17 +254,20 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-3">
               {[
-                { label: "First Name", value: profile?.firstName },
-                { label: "Last Name", value: profile?.lastName },
-                { label: "Username", value: `@${profile?.username}` },
-                { label: "Gender", value: profile?.gender },
-              ].map(({ label, value }) => (
+                { labelKey: "first_name" as const, value: profile?.firstName },
+                { labelKey: "last_name" as const, value: profile?.lastName },
+                {
+                  labelKey: "username" as const,
+                  value: `@${profile?.username}`,
+                },
+                { labelKey: "gender" as const, value: profile?.gender },
+              ].map(({ labelKey, value }) => (
                 <div
-                  key={label}
+                  key={labelKey}
                   className="flex items-center justify-between py-1"
                 >
                   <span className="text-xs text-muted-foreground font-gaming tracking-wide">
-                    {label.toUpperCase()}
+                    {t(labelKey)}
                   </span>
                   <span className="text-sm text-foreground font-medium">
                     {value || "—"}
@@ -269,7 +278,7 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between py-1">
                   <span className="text-xs text-muted-foreground font-gaming tracking-wide flex items-center gap-1">
                     <Phone size={10} />
-                    PHONES
+                    {t("phones")}
                   </span>
                   <div className="text-right">
                     {profile?.phoneNumbers.map((p) => (
@@ -299,7 +308,7 @@ export default function ProfilePage() {
           >
             <Lock size={18} className="text-muted-foreground" />
             <span className="font-gaming tracking-wide text-sm flex-1 text-left">
-              Reset Password
+              {t("reset_password")}
             </span>
             <ChevronRight
               size={16}
@@ -310,9 +319,7 @@ export default function ProfilePage() {
             <div className="px-4 pb-4 space-y-3">
               <Separator className="bg-border" />
               <p className="text-xs text-muted-foreground">
-                To reset your password, please re-authenticate via Internet
-                Identity. Your identity is secured by the Internet Computer
-                blockchain.
+                {t("reset_password_info")}
               </p>
               <Button
                 variant="outline"
@@ -324,7 +331,7 @@ export default function ProfilePage() {
                   )
                 }
               >
-                Manage via Internet Identity
+                {t("manage_via_ii")}
               </Button>
             </div>
           )}
@@ -349,7 +356,7 @@ export default function ProfilePage() {
           >
             <MessageCircle size={18} className="text-accent" />
             <span className="font-gaming tracking-wide text-sm flex-1 text-left">
-              Customer Support
+              {t("customer_support")}
             </span>
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
@@ -361,7 +368,7 @@ export default function ProfilePage() {
           >
             <Globe size={18} className="text-chart-3" />
             <span className="font-gaming tracking-wide text-sm flex-1 text-left">
-              Change Language
+              {t("change_language")}
             </span>
             <span className="text-xs text-muted-foreground mr-2">
               {profile?.languagePreference?.toUpperCase() || "EN"}
@@ -383,7 +390,7 @@ export default function ProfilePage() {
             className="w-full border-destructive/40 text-destructive hover:bg-destructive/10 font-gaming tracking-widest"
           >
             <LogOut size={16} className="mr-2" />
-            LOGOUT
+            {t("logout")}
           </Button>
         </motion.div>
 

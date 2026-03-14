@@ -14,55 +14,57 @@ import { useState } from "react";
 import { toast } from "sonner";
 import LanguageModal from "../components/LanguageModal";
 import { useSaveProfile, useUserProfile } from "../hooks/useQueries";
-
-const CATEGORIES = [
-  {
-    key: "BattleRoyale",
-    label: "BattleR",
-    sublabel: "Battle Royale",
-    icon: Flame,
-    gradient: "from-orange-900/60 to-red-900/40",
-    border: "border-orange-500/30",
-    iconColor: "text-orange-400",
-    glowColor: "hover:shadow-[0_0_20px_oklch(65%_0.2_30/0.3)]",
-  },
-  {
-    key: "ClashSquad",
-    label: "Clash Sq",
-    sublabel: "Clash Squad",
-    icon: Swords,
-    gradient: "from-blue-900/60 to-cyan-900/40",
-    border: "border-blue-500/30",
-    iconColor: "text-blue-400",
-    glowColor: "hover:shadow-[0_0_20px_oklch(62%_0.22_220/0.3)]",
-  },
-  {
-    key: "LoneWolf",
-    label: "Lone Wolf",
-    sublabel: "Solo Mode",
-    icon: Target,
-    gradient: "from-purple-900/60 to-violet-900/40",
-    border: "border-purple-500/30",
-    iconColor: "text-purple-400",
-    glowColor: "hover:shadow-[0_0_20px_oklch(62%_0.22_300/0.3)]",
-  },
-  {
-    key: "other",
-    label: "Others",
-    sublabel: "Special Events",
-    icon: Trophy,
-    gradient: "from-emerald-900/60 to-green-900/40",
-    border: "border-emerald-500/30",
-    iconColor: "text-emerald-400",
-    glowColor: "hover:shadow-[0_0_20px_oklch(65%_0.2_160/0.3)]",
-  },
-];
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [langOpen, setLangOpen] = useState(false);
   const { data: profile } = useUserProfile();
   const saveProfile = useSaveProfile();
+  const { t } = useTranslation();
+
+  const CATEGORIES = [
+    {
+      key: "BattleRoyale",
+      label: t("battle_royale"),
+      sublabel: t("sq50_survival"),
+      icon: Flame,
+      gradient: "from-orange-900/60 to-red-900/40",
+      border: "border-orange-500/30",
+      iconColor: "text-orange-400",
+      glowColor: "hover:shadow-[0_0_20px_oklch(65%_0.2_30/0.3)]",
+    },
+    {
+      key: "ClashSquad",
+      label: t("clash_squad"),
+      sublabel: t("squad_4v4"),
+      icon: Swords,
+      gradient: "from-blue-900/60 to-cyan-900/40",
+      border: "border-blue-500/30",
+      iconColor: "text-blue-400",
+      glowColor: "hover:shadow-[0_0_20px_oklch(62%_0.22_220/0.3)]",
+    },
+    {
+      key: "LoneWolf",
+      label: t("lone_wolf"),
+      sublabel: t("solo_1v1"),
+      icon: Target,
+      gradient: "from-purple-900/60 to-violet-900/40",
+      border: "border-purple-500/30",
+      iconColor: "text-purple-400",
+      glowColor: "hover:shadow-[0_0_20px_oklch(62%_0.22_300/0.3)]",
+    },
+    {
+      key: "other",
+      label: t("others"),
+      sublabel: t("unique_modes"),
+      icon: Trophy,
+      gradient: "from-emerald-900/60 to-green-900/40",
+      border: "border-emerald-500/30",
+      iconColor: "text-emerald-400",
+      glowColor: "hover:shadow-[0_0_20px_oklch(65%_0.2_160/0.3)]",
+    },
+  ];
 
   const handleSupport = () => {
     window.open("https://t.me/Flashhhhhhhhhhhhhhhhhhhhhhhhhhh", "_blank");
@@ -110,7 +112,7 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-3 py-1 mb-3">
               <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
               <span className="font-gaming text-primary text-xs tracking-[0.2em]">
-                LIVE TOURNAMENTS
+                {t("live_tournaments")}
               </span>
             </div>
             <h1 className="font-gaming text-4xl font-extrabold text-gradient-orange glow-text-orange leading-tight">
@@ -120,7 +122,7 @@ export default function HomePage() {
               ESPORT
             </p>
             <p className="font-gaming text-muted-foreground tracking-widest text-xs mt-3">
-              PLAY · WIN · DOMINATE
+              {t("play_win_dominate")}
             </p>
           </motion.div>
         </div>
@@ -135,13 +137,15 @@ export default function HomePage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Welcome back,</p>
+              <p className="text-muted-foreground text-sm">
+                {t("welcome_back")}
+              </p>
               <p className="font-gaming text-xl font-bold text-foreground">
                 {profile?.username || "Player"}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-muted-foreground text-xs">Balance</p>
+              <p className="text-muted-foreground text-xs">{t("balance")}</p>
               <p className="font-mono text-primary text-lg font-bold">
                 ৳{Number(profile?.walletBalance ?? 0).toFixed(0)}
               </p>
@@ -152,7 +156,7 @@ export default function HomePage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-gaming text-base tracking-widest text-muted-foreground uppercase">
-              Tournaments
+              {t("tournaments")}
             </h2>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -198,7 +202,7 @@ export default function HomePage() {
                   </p>
                   <div className="flex items-center gap-1 mt-2">
                     <span className="text-[10px] text-muted-foreground/70 font-gaming tracking-wide">
-                      VIEW
+                      {t("view")}
                     </span>
                     <ChevronRight
                       size={10}
@@ -217,7 +221,7 @@ export default function HomePage() {
           transition={{ delay: 0.4 }}
         >
           <h2 className="font-gaming text-base tracking-widest text-muted-foreground uppercase mb-3">
-            Quick Actions
+            {t("quick_actions")}
           </h2>
           <div className="grid grid-cols-3 gap-3">
             <button
@@ -231,7 +235,7 @@ export default function HomePage() {
                 className="text-accent mx-auto mb-2 group-hover:scale-110 transition-transform"
               />
               <p className="font-gaming text-xs tracking-wide text-foreground">
-                Support
+                {t("support")}
               </p>
             </button>
             <button
@@ -245,7 +249,7 @@ export default function HomePage() {
                 className="text-primary mx-auto mb-2 group-hover:scale-110 transition-transform"
               />
               <p className="font-gaming text-xs tracking-wide text-foreground">
-                Share
+                {t("share")}
               </p>
             </button>
             <button
@@ -259,7 +263,7 @@ export default function HomePage() {
                 className="text-chart-3 mx-auto mb-2 group-hover:scale-110 transition-transform"
               />
               <p className="font-gaming text-xs tracking-wide text-foreground">
-                Language
+                {t("language")}
               </p>
             </button>
           </div>

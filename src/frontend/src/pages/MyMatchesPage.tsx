@@ -7,8 +7,12 @@ import {
   type TournamentMatch,
   useRegisteredMatches,
 } from "../hooks/useQueries";
+import { useTranslation } from "../hooks/useTranslation";
 
-function EmptyState() {
+function EmptyState({
+  message,
+  subMessage,
+}: { message: string; subMessage: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -17,12 +21,8 @@ function EmptyState() {
       className="flex flex-col items-center justify-center py-16 text-center"
     >
       <SearchX size={52} className="text-muted-foreground/30 mb-4" />
-      <h3 className="font-gaming text-xl text-muted-foreground">
-        No Live Match Found
-      </h3>
-      <p className="text-sm text-muted-foreground/60 mt-2">
-        Register for tournaments to see your matches here
-      </p>
+      <h3 className="font-gaming text-xl text-muted-foreground">{message}</h3>
+      <p className="text-sm text-muted-foreground/60 mt-2">{subMessage}</p>
     </motion.div>
   );
 }
@@ -30,7 +30,18 @@ function EmptyState() {
 function MatchCard({
   match,
   index,
-}: { match: TournamentMatch; index: number }) {
+  entryLabel,
+  prizeLabel,
+  roomIdLabel,
+  passwordLabel,
+}: {
+  match: TournamentMatch;
+  index: number;
+  entryLabel: string;
+  prizeLabel: string;
+  roomIdLabel: string;
+  passwordLabel: string;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -61,27 +72,27 @@ function MatchCard({
       </div>
       <div className="flex gap-4">
         <div>
-          <p className="text-[10px] text-muted-foreground">ENTRY</p>
+          <p className="text-[10px] text-muted-foreground">{entryLabel}</p>
           <p className="font-mono text-sm text-primary">
             ৳{Number(match.entryFee)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-muted-foreground">PRIZE</p>
+          <p className="text-[10px] text-muted-foreground">{prizeLabel}</p>
           <p className="font-mono text-sm text-chart-3">
             ৳{Number(match.prizePool)}
           </p>
         </div>
         {match.roomId && (
           <div>
-            <p className="text-[10px] text-muted-foreground">ROOM ID</p>
+            <p className="text-[10px] text-muted-foreground">{roomIdLabel}</p>
             <p className="font-mono text-sm">{match.roomId}</p>
           </div>
         )}
       </div>
       {match.roomPassword && (
         <div className="bg-muted/50 rounded-lg px-3 py-2 flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Password:</span>
+          <span className="text-xs text-muted-foreground">{passwordLabel}</span>
           <span className="font-mono text-sm text-primary">
             {match.roomPassword}
           </span>
@@ -93,20 +104,28 @@ function MatchCard({
 
 export default function MyMatchesPage() {
   const { data: allMatches, isLoading } = useRegisteredMatches();
+  const { t } = useTranslation();
 
   const upcoming = (allMatches || []).filter((m) => m.status === "upcoming");
   const live = (allMatches || []).filter((m) => m.status === "live");
   const completed = (allMatches || []).filter((m) => m.status === "completed");
+
+  const matchCardProps = {
+    entryLabel: t("entry"),
+    prizeLabel: t("prize"),
+    roomIdLabel: t("room_id"),
+    passwordLabel: t("password"),
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="px-4 pt-8 pb-4">
         <div className="h-1 w-12 bg-primary rounded-full mb-3" />
         <h1 className="font-gaming text-3xl font-extrabold tracking-tight">
-          MY MATCHES
+          {t("my_matches")}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Your tournament history
+          {t("your_tournament_history")}
         </p>
       </header>
 
@@ -119,7 +138,7 @@ export default function MyMatchesPage() {
               className="flex-1 font-gaming tracking-wide data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Clock size={14} className="mr-1" />
-              Upcoming
+              {t("upcoming")}
             </TabsTrigger>
             <TabsTrigger
               value="live"
@@ -127,7 +146,7 @@ export default function MyMatchesPage() {
               className="flex-1 font-gaming tracking-wide data-[state=active]:bg-green-600 data-[state=active]:text-white"
             >
               <Zap size={14} className="mr-1" />
-              Live
+              {t("live")}
             </TabsTrigger>
             <TabsTrigger
               value="completed"
@@ -135,7 +154,7 @@ export default function MyMatchesPage() {
               className="flex-1 font-gaming tracking-wide data-[state=active]:bg-secondary data-[state=active]:text-foreground"
             >
               <CheckCircle2 size={14} className="mr-1" />
-              Done
+              {t("done")}
             </TabsTrigger>
           </TabsList>
 
@@ -149,28 +168,52 @@ export default function MyMatchesPage() {
             <>
               <TabsContent value="upcoming" className="mt-0">
                 {upcoming.length === 0 ? (
-                  <EmptyState />
+                  <EmptyState
+                    message={t("no_match_found")}
+                    subMessage={t("register_to_see_matches")}
+                  />
                 ) : (
                   upcoming.map((m, i) => (
-                    <MatchCard key={m.id.toString()} match={m} index={i} />
+                    <MatchCard
+                      key={m.id.toString()}
+                      match={m}
+                      index={i}
+                      {...matchCardProps}
+                    />
                   ))
                 )}
               </TabsContent>
               <TabsContent value="live" className="mt-0">
                 {live.length === 0 ? (
-                  <EmptyState />
+                  <EmptyState
+                    message={t("no_match_found")}
+                    subMessage={t("register_to_see_matches")}
+                  />
                 ) : (
                   live.map((m, i) => (
-                    <MatchCard key={m.id.toString()} match={m} index={i} />
+                    <MatchCard
+                      key={m.id.toString()}
+                      match={m}
+                      index={i}
+                      {...matchCardProps}
+                    />
                   ))
                 )}
               </TabsContent>
               <TabsContent value="completed" className="mt-0">
                 {completed.length === 0 ? (
-                  <EmptyState />
+                  <EmptyState
+                    message={t("no_match_found")}
+                    subMessage={t("register_to_see_matches")}
+                  />
                 ) : (
                   completed.map((m, i) => (
-                    <MatchCard key={m.id.toString()} match={m} index={i} />
+                    <MatchCard
+                      key={m.id.toString()}
+                      match={m}
+                      index={i}
+                      {...matchCardProps}
+                    />
                   ))
                 )}
               </TabsContent>
