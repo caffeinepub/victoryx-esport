@@ -37,6 +37,29 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const PaymentRequest = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
+  }),
+  'user' : IDL.Principal,
+  'timestamp' : Time,
+  'amount' : IDL.Int,
+});
+export const WithdrawRequest = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
+  }),
+  'user' : IDL.Principal,
+  'timestamp' : Time,
+  'upiId' : IDL.Text,
+  'amount' : IDL.Int,
+});
 export const Gender = IDL.Variant({
   'other' : IDL.Null,
   'female' : IDL.Null,
@@ -50,6 +73,7 @@ export const WalletTransaction = IDL.Record({
     'withdraw' : IDL.Null,
     'deposit' : IDL.Null,
     'entryFee' : IDL.Null,
+    'winning' : IDL.Null,
   }),
   'description' : IDL.Text,
   'timestamp' : Time,
@@ -59,7 +83,9 @@ export const UserProfile = IDL.Record({
   'languagePreference' : IDL.Text,
   'username' : IDL.Text,
   'phoneNumbers' : IDL.Vec(IDL.Text),
+  'winningBalance' : IDL.Int,
   'registeredMatches' : IDL.Vec(IDL.Nat),
+  'email' : IDL.Text,
   'gender' : Gender,
   'transactions' : IDL.Vec(WalletTransaction),
   'lastName' : IDL.Text,
@@ -70,9 +96,40 @@ export const UserProfile = IDL.Record({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addMatch' : IDL.Func([TournamentMatch], [], []),
+  'addMatchWithToken' : IDL.Func([IDL.Text, TournamentMatch], [], []),
+  'addWinningAmountWithToken' : IDL.Func(
+      [IDL.Text, IDL.Principal, IDL.Int],
+      [],
+      [],
+    ),
   'approvePaymentRequest' : IDL.Func([IDL.Nat], [], []),
+  'approvePaymentWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'approveWithdrawWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'checkEmailExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'checkPhoneExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'checkUsernameExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'deleteMatchWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   'getAllMatches' : IDL.Func([], [IDL.Vec(TournamentMatch)], ['query']),
+  'getAllPendingPaymentsWithToken' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(PaymentRequest)],
+      ['query'],
+    ),
+  'getAllPendingWithdrawsWithToken' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(WithdrawRequest)],
+      ['query'],
+    ),
+  'getAllUsersWithToken' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Vec(
+          IDL.Record({ 'principal' : IDL.Principal, 'username' : IDL.Text })
+        ),
+      ],
+      ['query'],
+    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getMatchesByCategory' : IDL.Func(
@@ -101,8 +158,12 @@ export const idlService = IDL.Service({
   'getWalletBalance' : IDL.Func([], [IDL.Int], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'registerForMatch' : IDL.Func([IDL.Nat], [], []),
+  'rejectPaymentWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'rejectWithdrawWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   'requestPayment' : IDL.Func([IDL.Int], [], []),
+  'requestWithdraw' : IDL.Func([IDL.Int, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'updateMatchWithToken' : IDL.Func([IDL.Text, TournamentMatch], [], []),
 });
 
 export const idlInitArgs = [];
@@ -137,6 +198,29 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const PaymentRequest = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : IDL.Variant({
+      'pending' : IDL.Null,
+      'approved' : IDL.Null,
+      'rejected' : IDL.Null,
+    }),
+    'user' : IDL.Principal,
+    'timestamp' : Time,
+    'amount' : IDL.Int,
+  });
+  const WithdrawRequest = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : IDL.Variant({
+      'pending' : IDL.Null,
+      'approved' : IDL.Null,
+      'rejected' : IDL.Null,
+    }),
+    'user' : IDL.Principal,
+    'timestamp' : Time,
+    'upiId' : IDL.Text,
+    'amount' : IDL.Int,
+  });
   const Gender = IDL.Variant({
     'other' : IDL.Null,
     'female' : IDL.Null,
@@ -150,6 +234,7 @@ export const idlFactory = ({ IDL }) => {
       'withdraw' : IDL.Null,
       'deposit' : IDL.Null,
       'entryFee' : IDL.Null,
+      'winning' : IDL.Null,
     }),
     'description' : IDL.Text,
     'timestamp' : Time,
@@ -159,7 +244,9 @@ export const idlFactory = ({ IDL }) => {
     'languagePreference' : IDL.Text,
     'username' : IDL.Text,
     'phoneNumbers' : IDL.Vec(IDL.Text),
+    'winningBalance' : IDL.Int,
     'registeredMatches' : IDL.Vec(IDL.Nat),
+    'email' : IDL.Text,
     'gender' : Gender,
     'transactions' : IDL.Vec(WalletTransaction),
     'lastName' : IDL.Text,
@@ -170,9 +257,40 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addMatch' : IDL.Func([TournamentMatch], [], []),
+    'addMatchWithToken' : IDL.Func([IDL.Text, TournamentMatch], [], []),
+    'addWinningAmountWithToken' : IDL.Func(
+        [IDL.Text, IDL.Principal, IDL.Int],
+        [],
+        [],
+      ),
     'approvePaymentRequest' : IDL.Func([IDL.Nat], [], []),
+    'approvePaymentWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'approveWithdrawWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'checkEmailExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'checkPhoneExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'checkUsernameExists' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'deleteMatchWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
     'getAllMatches' : IDL.Func([], [IDL.Vec(TournamentMatch)], ['query']),
+    'getAllPendingPaymentsWithToken' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(PaymentRequest)],
+        ['query'],
+      ),
+    'getAllPendingWithdrawsWithToken' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(WithdrawRequest)],
+        ['query'],
+      ),
+    'getAllUsersWithToken' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Vec(
+            IDL.Record({ 'principal' : IDL.Principal, 'username' : IDL.Text })
+          ),
+        ],
+        ['query'],
+      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getMatchesByCategory' : IDL.Func(
@@ -205,8 +323,12 @@ export const idlFactory = ({ IDL }) => {
     'getWalletBalance' : IDL.Func([], [IDL.Int], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'registerForMatch' : IDL.Func([IDL.Nat], [], []),
+    'rejectPaymentWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'rejectWithdrawWithToken' : IDL.Func([IDL.Text, IDL.Nat], [], []),
     'requestPayment' : IDL.Func([IDL.Int], [], []),
+    'requestWithdraw' : IDL.Func([IDL.Int, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'updateMatchWithToken' : IDL.Func([IDL.Text, TournamentMatch], [], []),
   });
 };
 

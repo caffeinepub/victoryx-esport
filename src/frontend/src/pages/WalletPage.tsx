@@ -17,6 +17,7 @@ import {
   Loader2,
   Plus,
   QrCode,
+  Trophy,
   Wallet,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -25,14 +26,17 @@ import { toast } from "sonner";
 import {
   type WalletTransaction,
   useRequestPayment,
+  useRequestWithdraw,
   useTransactionHistory,
   useWalletBalance,
+  useWinningBalance,
 } from "../hooks/useQueries";
 import { useTranslation } from "../hooks/useTranslation";
 
 function TxRow({ tx, index }: { tx: WalletTransaction; index: number }) {
   const isDeposit = tx.transactionType === "deposit";
   const isWithdraw = tx.transactionType === "withdraw";
+  const isWinning = tx.transactionType === "winning";
   const date = new Date(Number(tx.timestamp) / 1_000_000);
 
   return (
@@ -49,13 +53,17 @@ function TxRow({ tx, index }: { tx: WalletTransaction; index: number }) {
             ? "bg-green-500/20"
             : isWithdraw
               ? "bg-red-500/20"
-              : "bg-primary/20"
+              : isWinning
+                ? "bg-yellow-500/20"
+                : "bg-primary/20"
         }`}
       >
         {isDeposit ? (
           <ArrowDownCircle size={18} className="text-green-400" />
         ) : isWithdraw ? (
           <ArrowUpCircle size={18} className="text-red-400" />
+        ) : isWinning ? (
+          <Trophy size={18} className="text-yellow-400" />
         ) : (
           <Wallet size={18} className="text-primary" />
         )}
@@ -71,14 +79,14 @@ function TxRow({ tx, index }: { tx: WalletTransaction; index: number }) {
       <div className="text-right">
         <p
           className={`font-mono text-sm font-bold ${
-            isDeposit
+            isDeposit || isWinning
               ? "text-green-400"
               : isWithdraw
                 ? "text-red-400"
                 : "text-primary"
           }`}
         >
-          {isDeposit ? "+" : "-"}৳{Number(tx.amount)}
+          {isDeposit || isWinning ? "+" : "-"}₹{Number(tx.amount)}
         </p>
         <Badge
           variant="outline"
@@ -102,17 +110,30 @@ function TxRow({ tx, index }: { tx: WalletTransaction; index: number }) {
 
 export default function WalletPage() {
   const { data: balance, isLoading: balLoading } = useWalletBalance();
+  const { data: winningBalance, isLoading: winLoading } = useWinningBalance();
   const { data: txHistory, isLoading: txLoading } = useTransactionHistory();
   const requestPayment = useRequestPayment();
+  const requestWithdraw = useRequestWithdraw();
   const { t } = useTranslation();
 
   const [addMoneyOpen, setAddMoneyOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [amount, setAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawUpi, setWithdrawUpi] = useState("");
   const [showQR, setShowQR] = useState(false);
 
+  const winBal = Number(winningBalance ?? 0);
+  const totalBalance = Number(balance ?? 0) + winBal;
+
   const handleAddMoneyClick = () => {
-    if (!amount || Number.isNaN(Number(amount)) || Number(amount) <= 0) {
+    const num = Number(amount);
+    if (!amount || Number.isNaN(num) || num <= 0) {
       toast.error("Enter a valid amount");
+      return;
+    }
+    if (num < 10) {
+      toast.error("Minimum add amount is ₹10");
       return;
     }
     setShowQR(true);
@@ -138,6 +159,40 @@ export default function WalletPage() {
     setAddMoneyOpen(open);
   };
 
+  const handleWithdrawSubmit = async () => {
+    const num = Number(withdrawAmount);
+    if (!withdrawAmount || Number.isNaN(num) || num <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (num < 50) {
+      toast.error("Minimum withdrawal amount is ₹50");
+      return;
+    }
+    if (num > winBal) {
+      toast.error(`Insufficient winning balance. Available: ₹${winBal}`);
+      return;
+    }
+    if (!withdrawUpi.trim()) {
+      toast.error("Please enter your UPI ID");
+      return;
+    }
+    try {
+      await requestWithdraw.mutateAsync({
+        amount: BigInt(Math.round(num)),
+        upiId: withdrawUpi.trim(),
+      });
+      toast.success(
+        "Withdrawal request submitted! Admin will process it shortly.",
+      );
+      setWithdrawOpen(false);
+      setWithdrawAmount("");
+      setWithdrawUpi("");
+    } catch {
+      toast.error("Failed to submit withdrawal request");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="px-4 pt-8 pb-4">
@@ -159,27 +214,66 @@ export default function WalletPage() {
           className="gaming-card rounded-2xl p-6 bg-gradient-to-br from-primary/20 to-accent/10 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+
+          {/* Main total balance (wallet + winning combined) */}
           <p className="text-muted-foreground text-sm font-gaming tracking-widest">
             {t("balance_label")}
           </p>
-          {balLoading ? (
+          {balLoading || winLoading ? (
             <Skeleton className="h-12 w-40 mt-2 bg-muted" />
           ) : (
             <p className="font-mono text-5xl font-bold text-foreground mt-1">
               <span className="text-primary text-2xl align-top mt-2 inline-block">
-                ৳
+                ₹
               </span>
-              {Number(balance ?? 0).toLocaleString()}
+              {totalBalance.toLocaleString()}
             </p>
           )}
-          <Button
-            data-ocid="wallet.add_money_button"
-            onClick={() => setAddMoneyOpen(true)}
-            className="mt-4 bg-primary text-primary-foreground font-gaming tracking-widest glow-orange hover:bg-primary/90"
-          >
-            <Plus size={16} className="mr-2" />
-            {t("add_money")}
-          </Button>
+
+          {/* Winning balance shown separately */}
+          <div className="mt-3 flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 w-fit">
+            <Trophy size={14} className="text-yellow-400 shrink-0" />
+            <div>
+              <p className="text-[10px] font-gaming tracking-widest text-yellow-400/70">
+                PRIZE BALANCE
+              </p>
+              {winLoading ? (
+                <Skeleton className="h-5 w-20 bg-muted" />
+              ) : (
+                <p className="font-mono text-lg font-bold text-yellow-400">
+                  ₹{winBal.toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="mt-4 flex gap-3">
+            <Button
+              data-ocid="wallet.add_money_button"
+              onClick={() => setAddMoneyOpen(true)}
+              className="bg-primary text-primary-foreground font-gaming tracking-widest glow-orange hover:bg-primary/90"
+            >
+              <Plus size={16} className="mr-2" />
+              {t("add_money")}
+            </Button>
+            <div className="relative flex flex-col items-start gap-1">
+              <Button
+                data-ocid="wallet.withdraw_button"
+                onClick={() => setWithdrawOpen(true)}
+                disabled={winBal === 0}
+                className="bg-yellow-600 hover:bg-yellow-500 text-black font-gaming tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ArrowUpCircle size={16} className="mr-2" />
+                WITHDRAW
+              </Button>
+              {winBal === 0 && (
+                <p className="text-[10px] text-yellow-500/60 font-gaming tracking-wide">
+                  No winning balance
+                </p>
+              )}
+            </div>
+          </div>
         </motion.div>
 
         {/* Transaction History */}
@@ -242,8 +336,11 @@ export default function WalletPage() {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder={t("enter_amount")}
                   className="bg-muted border-border font-mono text-lg h-12"
-                  min="1"
+                  min="10"
                 />
+                <p className="text-[11px] text-muted-foreground/70">
+                  Minimum: ₹10
+                </p>
               </div>
               <Button
                 data-ocid="wallet.confirm_add_button"
@@ -260,7 +357,7 @@ export default function WalletPage() {
                 <p className="text-sm text-muted-foreground mb-3">
                   {t("scan_qr_instructions")}{" "}
                   <span className="text-primary font-mono font-bold">
-                    ৳{amount}
+                    ₹{amount}
                   </span>
                   , then click &quot;{t("ive_paid")}&quot;
                 </p>
@@ -300,6 +397,80 @@ export default function WalletPage() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdraw Modal */}
+      <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+        <DialogContent
+          data-ocid="wallet.withdraw.dialog"
+          className="bg-card border-border max-w-sm"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-gaming text-xl flex items-center gap-2">
+              <Trophy size={20} className="text-yellow-400" />
+              WITHDRAW WINNINGS
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Prize balance info */}
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
+              <p className="text-[10px] font-gaming tracking-widest text-yellow-400/70">
+                AVAILABLE PRIZE BALANCE
+              </p>
+              <p className="font-mono text-2xl font-bold text-yellow-400 mt-0.5">
+                ₹{winBal.toLocaleString()}
+              </p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1">
+                Only prize winnings can be withdrawn · Minimum ₹50
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-gaming text-sm tracking-wide text-muted-foreground">
+                AMOUNT (₹)
+              </Label>
+              <Input
+                data-ocid="wallet.withdraw.input"
+                type="number"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder="Min ₹50"
+                className="bg-muted border-border font-mono text-lg h-12"
+                min="50"
+                max={winBal}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-gaming text-sm tracking-wide text-muted-foreground">
+                UPI ID
+              </Label>
+              <Input
+                data-ocid="wallet.withdraw.upi_input"
+                type="text"
+                value={withdrawUpi}
+                onChange={(e) => setWithdrawUpi(e.target.value)}
+                placeholder="yourname@upi"
+                className="bg-muted border-border font-mono h-12"
+              />
+            </div>
+
+            <Button
+              data-ocid="wallet.withdraw.submit_button"
+              onClick={handleWithdrawSubmit}
+              disabled={requestWithdraw.isPending}
+              className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-gaming tracking-widest h-12"
+            >
+              {requestWithdraw.isPending ? (
+                <Loader2 className="animate-spin mr-2" size={16} />
+              ) : (
+                <ArrowUpCircle size={16} className="mr-2" />
+              )}
+              SUBMIT WITHDRAWAL
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

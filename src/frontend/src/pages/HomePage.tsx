@@ -147,7 +147,7 @@ export default function HomePage() {
             <div className="text-right">
               <p className="text-muted-foreground text-xs">{t("balance")}</p>
               <p className="font-mono text-primary text-lg font-bold">
-                ৳{Number(profile?.walletBalance ?? 0).toFixed(0)}
+                ₹{Number(profile?.walletBalance ?? 0).toFixed(0)}
               </p>
             </div>
           </div>

@@ -74,13 +74,13 @@ function MatchCard({
         <div>
           <p className="text-[10px] text-muted-foreground">{entryLabel}</p>
           <p className="font-mono text-sm text-primary">
-            ৳{Number(match.entryFee)}
+            ₹{Number(match.entryFee)}
           </p>
         </div>
         <div>
           <p className="text-[10px] text-muted-foreground">{prizeLabel}</p>
           <p className="font-mono text-sm text-chart-3">
-            ৳{Number(match.prizePool)}
+            ₹{Number(match.prizePool)}
           </p>
         </div>
         {match.roomId && (

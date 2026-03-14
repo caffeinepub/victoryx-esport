@@ -14,6 +14,15 @@ export type Gender = { 'other' : null } |
   { 'female' : null } |
   { 'male' : null } |
   { 'preferNotToSay' : null };
+export interface PaymentRequest {
+  'id' : bigint,
+  'status' : { 'pending' : null } |
+    { 'approved' : null } |
+    { 'rejected' : null },
+  'user' : Principal,
+  'timestamp' : Time,
+  'amount' : bigint,
+}
 export type Time = bigint;
 export interface TournamentMatch {
   'id' : bigint,
@@ -38,7 +47,9 @@ export interface UserProfile {
   'languagePreference' : string,
   'username' : string,
   'phoneNumbers' : Array<string>,
+  'winningBalance' : bigint,
   'registeredMatches' : Array<bigint>,
+  'email' : string,
   'gender' : Gender,
   'transactions' : Array<WalletTransaction>,
   'lastName' : string,
@@ -54,17 +65,51 @@ export interface WalletTransaction {
     { 'completed' : null },
   'transactionType' : { 'withdraw' : null } |
     { 'deposit' : null } |
-    { 'entryFee' : null },
+    { 'entryFee' : null } |
+    { 'winning' : null },
   'description' : string,
   'timestamp' : Time,
+  'amount' : bigint,
+}
+export interface WithdrawRequest {
+  'id' : bigint,
+  'status' : { 'pending' : null } |
+    { 'approved' : null } |
+    { 'rejected' : null },
+  'user' : Principal,
+  'timestamp' : Time,
+  'upiId' : string,
   'amount' : bigint,
 }
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addMatch' : ActorMethod<[TournamentMatch], undefined>,
+  'addMatchWithToken' : ActorMethod<[string, TournamentMatch], undefined>,
+  'addWinningAmountWithToken' : ActorMethod<
+    [string, Principal, bigint],
+    undefined
+  >,
   'approvePaymentRequest' : ActorMethod<[bigint], undefined>,
+  'approvePaymentWithToken' : ActorMethod<[string, bigint], undefined>,
+  'approveWithdrawWithToken' : ActorMethod<[string, bigint], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'checkEmailExists' : ActorMethod<[string], boolean>,
+  'checkPhoneExists' : ActorMethod<[string], boolean>,
+  'checkUsernameExists' : ActorMethod<[string], boolean>,
+  'deleteMatchWithToken' : ActorMethod<[string, bigint], undefined>,
   'getAllMatches' : ActorMethod<[], Array<TournamentMatch>>,
+  'getAllPendingPaymentsWithToken' : ActorMethod<
+    [string],
+    Array<PaymentRequest>
+  >,
+  'getAllPendingWithdrawsWithToken' : ActorMethod<
+    [string],
+    Array<WithdrawRequest>
+  >,
+  'getAllUsersWithToken' : ActorMethod<
+    [string],
+    Array<{ 'principal' : Principal, 'username' : string }>
+  >,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getMatchesByCategory' : ActorMethod<
@@ -82,8 +127,12 @@ export interface _SERVICE {
   'getWalletBalance' : ActorMethod<[], bigint>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'registerForMatch' : ActorMethod<[bigint], undefined>,
+  'rejectPaymentWithToken' : ActorMethod<[string, bigint], undefined>,
+  'rejectWithdrawWithToken' : ActorMethod<[string, bigint], undefined>,
   'requestPayment' : ActorMethod<[bigint], undefined>,
+  'requestWithdraw' : ActorMethod<[bigint, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'updateMatchWithToken' : ActorMethod<[string, TournamentMatch], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

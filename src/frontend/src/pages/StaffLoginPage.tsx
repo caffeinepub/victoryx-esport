@@ -1,32 +1,93 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, Lock, Shield } from "lucide-react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { AlertTriangle, Lock, UserCog } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 
-const ADMIN_USERNAME = "VictoryX";
-const ADMIN_PASSWORD = "VictoryX@Admin2024";
+export const STAFF_SESSION_KEY = "vx_staff_session";
+export const STAFF_LIST_KEY = "vx_staff_list";
 
-export const ADMIN_TOKEN = "VictoryX@Admin2024";
-export const ADMIN_SESSION_KEY = "vx_admin_authenticated";
+export type StaffMode =
+  | "all"
+  | "BattleRoyale"
+  | "ClashSquad"
+  | "LoneWolf"
+  | "other";
 
-export default function AdminLoginPage() {
+export interface StaffMember {
+  id: string;
+  name: string;
+  username: string;
+  password: string;
+  mode: StaffMode;
+}
+
+export const MODE_LABELS: Record<StaffMode, string> = {
+  all: "All Modes",
+  BattleRoyale: "Battle Royale",
+  ClashSquad: "Clash Squad",
+  LoneWolf: "Lone Wolf",
+  other: "Others",
+};
+
+export const MODE_URL_MAP: Record<string, StaffMode> = {
+  "/vx-staff": "all",
+  "/vx-staff-br": "BattleRoyale",
+  "/vx-staff-cs": "ClashSquad",
+  "/vx-staff-lw": "LoneWolf",
+  "/vx-staff-ot": "other",
+};
+
+export function getStaffList(): StaffMember[] {
+  try {
+    const stored = localStorage.getItem(STAFF_LIST_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored) as StaffMember[];
+    // Migration: add mode field if missing
+    return parsed.map((s) => ({ ...s, mode: (s.mode ?? "all") as StaffMode }));
+  } catch {
+    return [];
+  }
+}
+
+export default function StaffLoginPage() {
   const navigate = useNavigate();
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
+  const loginMode: StaffMode = MODE_URL_MAP[currentPath] ?? "all";
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const modeLabel = MODE_LABELS[loginMode];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     setTimeout(() => {
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        localStorage.setItem(ADMIN_SESSION_KEY, "true");
-        navigate({ to: "/admin" });
+      const staffList = getStaffList();
+      // Staff can login if their mode matches OR their mode is 'all'
+      const staff = staffList.find(
+        (s) =>
+          s.username === username &&
+          s.password === password &&
+          (s.mode === loginMode || s.mode === "all" || loginMode === "all"),
+      );
+      if (staff) {
+        localStorage.setItem(
+          STAFF_SESSION_KEY,
+          JSON.stringify({
+            username: staff.username,
+            name: staff.name,
+            mode: loginMode,
+          }),
+        );
+        navigate({ to: "/staff-panel" });
       } else {
         setError("Invalid credentials. Access denied.");
         setLoading(false);
@@ -37,13 +98,13 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-destructive/5 rounded-full blur-2xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-cyan-600/5 rounded-full blur-2xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage:
-              "linear-gradient(oklch(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, oklch(var(--primary)) 1px, transparent 1px)",
+              "linear-gradient(rgb(34 211 238 / 0.5) 1px, transparent 1px), linear-gradient(90deg, rgb(34 211 238 / 0.5) 1px, transparent 1px)",
             backgroundSize: "40px 40px",
           }}
         />
@@ -60,16 +121,16 @@ export default function AdminLoginPage() {
             initial={{ scale: 0, rotate: -30 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-primary/10 border-2 border-primary/30 flex items-center justify-center relative"
+            className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-cyan-500/10 border-2 border-cyan-500/30 flex items-center justify-center relative"
           >
-            <Shield size={36} className="text-primary" />
-            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary animate-pulse" />
+            <UserCog size={36} className="text-cyan-400" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-400 animate-pulse" />
           </motion.div>
           <h1 className="font-gaming text-2xl font-extrabold tracking-widest text-foreground">
-            ADMIN ACCESS
+            STAFF ACCESS
           </h1>
           <p className="text-xs text-muted-foreground mt-1 tracking-wider">
-            RESTRICTED AREA — AUTHORIZED ONLY
+            {modeLabel.toUpperCase()} — AUTHORIZED ONLY
           </p>
         </div>
 
@@ -80,18 +141,18 @@ export default function AdminLoginPage() {
                 USERNAME
               </Label>
               <Input
-                data-ocid="admin_login.input"
+                data-ocid="staff_login.input"
                 type="text"
                 value={username}
                 onChange={(e) => {
                   setUsername(e.target.value);
                   setError("");
                 }}
-                placeholder="Enter admin username"
+                placeholder="Enter staff username"
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
-                className="bg-muted border-border h-11 font-mono text-sm tracking-wider"
+                className="bg-muted border-cyan-500/30 h-11 font-mono text-sm tracking-wider focus-visible:ring-cyan-500/40"
               />
             </div>
 
@@ -105,23 +166,23 @@ export default function AdminLoginPage() {
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
-                  data-ocid="admin_login.password_input"
+                  data-ocid="staff_login.input"
                   type="password"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
                     setError("");
                   }}
-                  placeholder="Enter admin password"
+                  placeholder="Enter staff password"
                   autoComplete="current-password"
-                  className="bg-muted border-border h-11 pl-9 font-mono text-sm tracking-wider"
+                  className="bg-muted border-cyan-500/30 h-11 pl-9 font-mono text-sm tracking-wider focus-visible:ring-cyan-500/40"
                 />
               </div>
             </div>
 
             {error && (
               <motion.div
-                data-ocid="admin_login.error_state"
+                data-ocid="staff_login.error_state"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2"
@@ -137,20 +198,20 @@ export default function AdminLoginPage() {
             )}
 
             <Button
-              data-ocid="admin_login.submit_button"
+              data-ocid="staff_login.submit_button"
               type="submit"
               disabled={loading || !username || !password}
-              className="w-full h-11 font-gaming tracking-widest text-sm bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="w-full h-11 font-gaming tracking-widest text-sm bg-cyan-600 hover:bg-cyan-500 text-white"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   VERIFYING...
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Shield size={14} />
-                  ENTER ADMIN PANEL
+                  <UserCog size={14} />
+                  ENTER STAFF PANEL
                 </span>
               )}
             </Button>

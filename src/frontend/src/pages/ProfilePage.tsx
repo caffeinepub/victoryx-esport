@@ -19,6 +19,7 @@ import {
   MessageCircle,
   Phone,
   Save,
+  Shield,
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -95,9 +96,6 @@ export default function ProfilePage() {
     ? `${profile.firstName[0] || "?"}${profile.lastName[0] || ""}`.toUpperCase()
     : "?";
   const principal = identity?.getPrincipal().toString();
-
-  // Suppress unused variable warning — navigate kept for potential future use
-  void navigate;
 
   return (
     <div className="min-h-screen bg-background">
@@ -380,6 +378,23 @@ export default function ProfilePage() {
             </span>
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
+        </motion.div>
+
+        {/* Admin Login Button — visible to all users */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+        >
+          <Button
+            data-ocid="profile.admin_login_button"
+            variant="outline"
+            onClick={() => navigate({ to: "/vx-secure-admin" })}
+            className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 font-gaming tracking-widest"
+          >
+            <Shield size={16} className="mr-2" />
+            ADMIN LOGIN
+          </Button>
         </motion.div>
 
         {/* Logout */}

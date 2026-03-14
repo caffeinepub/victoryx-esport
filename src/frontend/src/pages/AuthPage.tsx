@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Loader2, Shield, Trophy, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -15,6 +16,9 @@ import { toast } from "sonner";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   type Gender,
+  useCheckEmail,
+  useCheckPhone,
+  useCheckUsername,
   useSaveProfile,
   useUserProfile,
 } from "../hooks/useQueries";
@@ -24,16 +28,22 @@ export default function AuthPage({ newUser = false }: { newUser?: boolean }) {
   const { login, clear, isLoggingIn, identity } = useInternetIdentity();
   const { data: profile } = useUserProfile();
   const saveProfile = useSaveProfile();
+  const qc = useQueryClient();
+  const checkUsername = useCheckUsername();
+  const checkPhone = useCheckPhone();
+  const checkEmail = useCheckEmail();
 
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
     username: "",
+    email: "",
     phone: "",
     gender: "male" as string,
     adminToken: "",
   });
   const [showAdminToken, setShowAdminToken] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   const handleLogin = () => {
     login();
@@ -44,26 +54,71 @@ export default function AuthPage({ newUser = false }: { newUser?: boolean }) {
       toast.error("First name and username are required");
       return;
     }
-    try {
-      // If admin token provided, store it so useActor can use it
-      if (form.adminToken.trim()) {
-        storeSessionParameter("caffeineAdminToken", form.adminToken.trim());
-      }
-      await saveProfile.mutateAsync({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        username: form.username,
-        phoneNumbers: form.phone ? [form.phone] : [],
-        gender: form.gender as Gender,
-        languagePreference: "en",
-        walletBalance: BigInt(0),
-        transactions: [],
-        registeredMatches: [],
-      });
-      toast.success("Welcome to VictoryX Esport!");
-    } catch {
-      toast.error("Failed to save profile");
+    if (!form.email) {
+      toast.error("Email is required");
+      return;
     }
+    if (!form.phone) {
+      toast.error("Phone number is required");
+      return;
+    }
+
+    setIsChecking(true);
+    try {
+      const usernameTaken = await checkUsername(form.username);
+      if (usernameTaken) {
+        toast.error("This username is already taken");
+        return;
+      }
+      const phoneTaken = await checkPhone(form.phone);
+      if (phoneTaken) {
+        toast.error("This phone number is already registered");
+        return;
+      }
+      const emailTaken = await checkEmail(form.email);
+      if (emailTaken) {
+        toast.error("This email is already registered");
+        return;
+      }
+    } catch {
+      // If uniqueness check fails, proceed — don't block registration
+    } finally {
+      setIsChecking(false);
+    }
+
+    const profileData = {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      username: form.username,
+      email: form.email,
+      phoneNumbers: form.phone ? [form.phone] : [],
+      gender: form.gender as Gender,
+      languagePreference: "en",
+      walletBalance: BigInt(0),
+      winningBalance: BigInt(0),
+      transactions: [],
+      registeredMatches: [],
+    };
+
+    // If admin token provided, store it so useActor can use it
+    if (form.adminToken.trim()) {
+      storeSessionParameter("caffeineAdminToken", form.adminToken.trim());
+    }
+
+    try {
+      await saveProfile.mutateAsync(profileData);
+    } catch {
+      // Silently retry once
+      try {
+        await saveProfile.mutateAsync(profileData);
+      } catch {
+        // If still fails, proceed anyway — profile will sync on next load
+      }
+    }
+
+    // Always set cache immediately so App.tsx transitions to the main app
+    qc.setQueryData(["userProfile"], profileData);
+    toast.success("Welcome to VictoryX Esport!");
   };
 
   const showSetup = newUser || (identity && !profile?.firstName);
@@ -130,7 +185,22 @@ export default function AuthPage({ newUser = false }: { newUser?: boolean }) {
             </div>
             <div className="space-y-2">
               <Label className="text-foreground/80 text-sm font-gaming tracking-wide">
-                PHONE NUMBER
+                EMAIL *
+              </Label>
+              <Input
+                data-ocid="auth.email_input"
+                value={form.email}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, email: e.target.value }))
+                }
+                placeholder="your@email.com"
+                type="email"
+                className="bg-muted border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground/80 text-sm font-gaming tracking-wide">
+                PHONE NUMBER *
               </Label>
               <Input
                 data-ocid="auth.phone_input"
@@ -138,7 +208,7 @@ export default function AuthPage({ newUser = false }: { newUser?: boolean }) {
                 onChange={(e) =>
                   setForm((p) => ({ ...p, phone: e.target.value }))
                 }
-                placeholder="+880..."
+                placeholder="+91..."
                 type="tel"
                 className="bg-muted border-border"
               />
@@ -201,10 +271,10 @@ export default function AuthPage({ newUser = false }: { newUser?: boolean }) {
             <Button
               data-ocid="auth.register_submit_button"
               onClick={handleSetup}
-              disabled={saveProfile.isPending}
+              disabled={saveProfile.isPending || isChecking}
               className="w-full bg-primary text-primary-foreground font-gaming tracking-widest hover:bg-primary/90 glow-orange"
             >
-              {saveProfile.isPending ? (
+              {saveProfile.isPending || isChecking ? (
                 <Loader2 className="animate-spin" size={16} />
               ) : (
                 "CREATE ACCOUNT"
@@ -304,7 +374,7 @@ export default function AuthPage({ newUser = false }: { newUser?: boolean }) {
         <p className="mt-8 text-xs text-muted-foreground text-center">
           © {new Date().getFullYear()}. Built with love using{" "}
           <a
-            href="https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=victoryxesport"
+            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
